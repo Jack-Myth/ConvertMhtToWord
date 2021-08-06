@@ -63,10 +63,16 @@ namespace ConvertMhtToWord
             var imgList = new List<string>();
             using (var srReadFile = new StreamReader(_imgDirectory + "\\" + "ImgDictionary.txt"))
             {
+
+                this.progressBar1.Maximum = (int)srReadFile.BaseStream.Length;
                 while (!srReadFile.EndOfStream)
                 {
                     string strReadLine = srReadFile.ReadLine();
                     imgList.Add(strReadLine);
+                    this.progressBar1.Value = (int)srReadFile.BaseStream.Position;
+                    this.ProgressLabel.Text = this.progressBar1.Value.ToString() + "/" + this.progressBar1.Maximum.ToString();
+                    this.progressBar1.Refresh();
+                    this.ProgressLabel.Refresh();
                 }
             }
 
@@ -80,6 +86,9 @@ namespace ConvertMhtToWord
             
             var tableChildren = document.QuerySelectorAll("table > tbody > tr > td");
             int i = 0;
+            int ContentLength = tableChildren.Length;
+            int LastUpdate = 0;
+            this.progressBar1.Maximum=ContentLength;
             foreach (var child in tableChildren)
             {
                 //if (i > 300)
@@ -112,17 +121,37 @@ namespace ConvertMhtToWord
                     }
                 }
                 i++;
+                if((float)(i-LastUpdate)/ ContentLength > 0.001)
+                {
+                    LastUpdate = i;
+                    this.progressBar1.Value = i;
+                    this.ProgressLabel.Text = i.ToString() + "/" + ContentLength.ToString();
+                    this.progressBar1.Refresh();
+                    this.ProgressLabel.Refresh();
+                }
             }
             var strSrcFilePath = textBox1.Text;
             var fileDirectory = strSrcFilePath.Substring(0, strSrcFilePath.IndexOf("."));
             var fileName = fileDirectory + ".docx";
-
+            i = 0;
+            ContentLength = doc.Paragraphs.Count;
+            LastUpdate = 0;
+            this.progressBar1.Maximum = ContentLength;
             foreach (Paragraph para in doc.Paragraphs)
             {
                 if (para.Range.Text.StartsWith("日期"))
                 {
                     //Object styleHeading = WdBuiltinStyle.wdStyleHeading1; //四级标题
                     para.Range.set_Style("标题 1");
+                }
+                i++;
+                if ((float)(i - LastUpdate) / ContentLength > 0.001)
+                {
+                    LastUpdate = i;
+                    this.progressBar1.Value = i;
+                    this.ProgressLabel.Text = i.ToString() + "/" + ContentLength.ToString();
+                    this.progressBar1.Refresh();
+                    this.ProgressLabel.Refresh();
                 }
             }
 
@@ -177,7 +206,10 @@ namespace ConvertMhtToWord
                  fsDic = new FileStream(_imgDirectory + "\\" + "ImgDictionary.txt", FileMode.Create);
                  swDic = new StreamWriter(fsDic);
             }
-            
+
+            this.progressBar1.Maximum = (int)rsSrc.BaseStream.Length;
+            this.progressBar1.Value = 0;
+            long LastUpdate=0;
             while (!rsSrc.EndOfStream)
             {
                 strLine = rsSrc.ReadLine().TrimEnd();
@@ -234,8 +266,15 @@ namespace ConvertMhtToWord
                     {
                         sbSrc.Append(strLine);
                     }
+                    if ((float)(rsSrc.BaseStream.Position - LastUpdate) / rsSrc.BaseStream.Length > 0.001)
+                    {
+                        LastUpdate = rsSrc.BaseStream.Position;
+                        this.progressBar1.Value = (int)rsSrc.BaseStream.Position;
+                        this.ProgressLabel.Text = rsSrc.BaseStream.Position.ToString() + "/" + rsSrc.BaseStream.Length.ToString();
+                        this.progressBar1.Refresh();
+                        this.ProgressLabel.Refresh();
+                    }
                 }
-
             }
             if (isHtml)
             {
